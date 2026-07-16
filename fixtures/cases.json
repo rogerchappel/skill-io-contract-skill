@@ -1,0 +1,16 @@
+{
+  "cases": [
+    {
+      "name": "local skill contract report",
+      "input": {
+        "skill": "SKILL.md",
+        "fixtures": "fixtures/cases.json"
+      },
+      "expected_outputs": ["markdown report", "pass/fail score"],
+      "allowed_side_effects": ["write report when --report is provided"],
+      "approval_required": "required",
+      "verification": "skill-io-contract check --skill SKILL.md --fixtures fixtures/cases.json"
+    }
+  ]
+}
+
