@@ -1,0 +1,14 @@
+{
+  "cases": [
+    {
+      "name": "missing approval for external write",
+      "input": {
+        "skill": "SKILL.md"
+      },
+      "expected_outputs": ["report"],
+      "allowed_side_effects": ["push branch to external repo"],
+      "verification": "skill-io-contract check --skill SKILL.md"
+    }
+  ]
+}
+
