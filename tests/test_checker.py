@@ -13,3 +13,8 @@ def test_report_marks_missing_fixtures():
     assert not report.passed
     assert "fixtures provided" in report.to_markdown()
 
+
+def test_external_side_effects_require_approval():
+    report = check_skill(Path("SKILL.md"), Path("fixtures/bad-cases.json"))
+    assert not report.passed
+    assert "external side effect needs approval_required" in report.to_markdown()
