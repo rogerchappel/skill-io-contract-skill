@@ -4,9 +4,8 @@
   "private": true,
   "description": "Local-first IO contract checker for reusable agent skills.",
   "scripts": {
-    "test": "python -m pytest",
-    "check": "python -m compileall src tests",
-    "smoke": "python -m skill_io_contract check --skill SKILL.md --fixtures fixtures/cases.json --report /tmp/skill-io-contract-report.md"
+    "test": "python3 -m pytest",
+    "check": "python3 -m compileall src tests",
+    "smoke": "python3 -m skill_io_contract check --skill SKILL.md --fixtures fixtures/cases.json --report /tmp/skill-io-contract-report.md"
   }
 }
-
