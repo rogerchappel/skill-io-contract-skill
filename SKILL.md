@@ -1,5 +1,7 @@
 # Skill IO Contract
 
+## When to Use
+
 Use this skill when preparing, reviewing, or releasing an agent skill and you need proof that the skill states its input and output contract clearly.
 
 ## Required Inputs
@@ -7,6 +9,11 @@ Use this skill when preparing, reviewing, or releasing an agent skill and you ne
 - Path to a `SKILL.md` file.
 - Optional JSON fixture file containing example cases.
 - Optional output path for the generated Markdown report.
+
+## Outputs
+
+- A Markdown report containing a pass/fail result and check score.
+- An optional report file when `--report` is provided.
 
 ## Side-Effect Boundaries
 
@@ -26,4 +33,3 @@ skill-io-contract check --skill ../my-skill/SKILL.md --report io-contract.md
 ## Validation Workflow
 
 Run `npm test`, `npm run check`, and `npm run smoke`. Attach the generated report to the release-candidate PR.
-
