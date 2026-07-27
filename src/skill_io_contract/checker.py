@@ -11,10 +11,10 @@ REQUIRED_SECTIONS = {
     "when to use": ("when to use", "use this skill", "trigger"),
     "inputs": ("required inputs", "inputs"),
     "outputs": ("outputs", "report", "artifact"),
-    "side effects": ("side-effect", "side effect", "boundaries"),
-    "approvals": ("approval", "ask for explicit"),
+    "side effects": ("side-effect", "side effect", "side-effect boundaries", "boundaries"),
+    "approvals": ("approval", "approval requirements", "ask for explicit"),
     "examples": ("examples", "example"),
-    "validation": ("validation", "verify", "smoke"),
+    "validation": ("validation", "validation workflow", "verify", "smoke"),
 }
 
 
@@ -72,14 +72,44 @@ def check_skill(skill_path: Path, fixture_path: Path | None = None) -> SkillRepo
 
 
 def _check_skill_text(text: str) -> list[CheckResult]:
-    lowered = text.lower()
+    headings = _markdown_headings(text)
     checks: list[CheckResult] = []
     for name, needles in REQUIRED_SECTIONS.items():
-        found = any(needle in lowered for needle in needles)
-        checks.append(CheckResult(f"skill section: {name}", found, "found guidance" if found else "missing guidance"))
+        found = any(needle in headings for needle in needles)
+        checks.append(CheckResult(f"skill section: {name}", found, "found heading" if found else "missing heading"))
     fenced_blocks = len(re.findall(r"```", text))
     checks.append(CheckResult("examples are fenced", fenced_blocks >= 2, f"found {fenced_blocks} fence markers"))
     return checks
+
+
+def _markdown_headings(text: str) -> set[str]:
+    headings: set[str] = set()
+    lines = text.splitlines()
+    in_fence = False
+    previous: str | None = None
+
+    for line in lines:
+        if re.match(r"^\s*(`{3,}|~{3,})", line):
+            in_fence = not in_fence
+            previous = None
+            continue
+        if in_fence:
+            continue
+
+        atx = re.match(r"^\s{0,3}#{1,6}\s+(.+?)(?:\s+#+)?\s*$", line)
+        if atx:
+            headings.add(atx.group(1).strip().lower())
+            previous = None
+            continue
+
+        if previous and re.match(r"^\s{0,3}(?:=+|-+)\s*$", line):
+            headings.add(previous.strip().lower())
+            previous = None
+            continue
+
+        previous = line if line.strip() else None
+
+    return headings
 
 
 def _check_fixtures(fixture_path: Path) -> list[CheckResult]:
@@ -111,4 +141,3 @@ def _check_external_approval(index: int, case: Any) -> CheckResult:
     passed = not external or approval in {"true", "yes", "required"}
     detail = "approval boundary explicit" if passed else "external side effect needs approval_required"
     return CheckResult(f"fixture case {index} approval boundary", passed, detail)
-
