@@ -124,20 +124,56 @@ def _check_fixtures(fixture_path: Path) -> list[CheckResult]:
     if not isinstance(cases, list):
         return checks
 
-    required = ("name", "input", "expected_outputs", "allowed_side_effects", "verification")
     for index, case in enumerate(cases, start=1):
-        missing = [field for field in required if not isinstance(case, dict) or field not in case]
-        checks.append(CheckResult(f"fixture case {index} contract fields", not missing, "all fields present" if not missing else f"missing {', '.join(missing)}"))
+        checks.append(_check_case_schema(index, case))
         checks.append(_check_external_approval(index, case))
     return checks
+
+
+def _check_case_schema(index: int, case: Any) -> CheckResult:
+    errors: list[str] = []
+    if not isinstance(case, dict):
+        errors.append("case must be an object")
+    else:
+        _require_non_empty_string(case, "name", errors)
+        if not isinstance(case.get("input"), dict):
+            errors.append("input must be an object")
+        _require_non_empty_string_list(case, "expected_outputs", errors)
+        _require_non_empty_string_list(case, "allowed_side_effects", errors)
+        _require_non_empty_string(case, "verification", errors)
+        if "approval_required" in case and case["approval_required"] != "required":
+            errors.append("approval_required must be 'required' when present")
+
+    detail = "all fields have valid types and values" if not errors else "; ".join(errors)
+    return CheckResult(f"fixture case {index} schema", not errors, detail)
+
+
+def _require_non_empty_string(case: dict[str, Any], field: str, errors: list[str]) -> None:
+    value = case.get(field)
+    if not isinstance(value, str) or not value.strip():
+        errors.append(f"{field} must be a non-empty string")
+
+
+def _require_non_empty_string_list(case: dict[str, Any], field: str, errors: list[str]) -> None:
+    value = case.get(field)
+    if not isinstance(value, list) or not value:
+        errors.append(f"{field} must be a non-empty list")
+    elif any(not isinstance(item, str) or not item.strip() for item in value):
+        errors.append(f"{field} entries must be non-empty strings")
 
 
 def _check_external_approval(index: int, case: Any) -> CheckResult:
     if not isinstance(case, dict):
         return CheckResult(f"fixture case {index} approval boundary", False, "case is not an object")
-    effects = " ".join(str(item).lower() for item in case.get("allowed_side_effects", []))
-    approval = str(case.get("approval_required", "")).lower()
+    allowed_side_effects = case.get("allowed_side_effects")
+    if not isinstance(allowed_side_effects, list) or any(not isinstance(item, str) or not item.strip() for item in allowed_side_effects):
+        return CheckResult(
+            f"fixture case {index} approval boundary",
+            False,
+            "approval boundary not analyzed: allowed_side_effects must be a list of non-empty strings",
+        )
+    effects = " ".join(item.lower() for item in allowed_side_effects)
     external = any(token in effects for token in ("push", "publish", "send", "external", "connector", "write"))
-    passed = not external or approval in {"true", "yes", "required"}
+    passed = not external or case.get("approval_required") == "required"
     detail = "approval boundary explicit" if passed else "external side effect needs approval_required"
     return CheckResult(f"fixture case {index} approval boundary", passed, detail)

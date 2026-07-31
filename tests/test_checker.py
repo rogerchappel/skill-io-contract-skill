@@ -1,6 +1,8 @@
 from pathlib import Path
+import json
 
 from skill_io_contract import check_skill
+from skill_io_contract.cli import main
 
 
 VALID_FIXTURES = Path("fixtures/cases.json")
@@ -21,6 +23,89 @@ def test_external_side_effects_require_approval():
     report = check_skill(Path("SKILL.md"), Path("fixtures/bad-cases.json"))
     assert not report.passed
     assert "external side effect needs approval_required" in report.to_markdown()
+
+
+def test_fixture_fields_require_documented_types_and_values(tmp_path):
+    fixtures = tmp_path / "invalid-fields.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": " ",
+                        "input": [],
+                        "expected_outputs": [""],
+                        "allowed_side_effects": "push",
+                        "verification": "",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+    markdown = report.to_markdown()
+
+    assert not report.passed
+    assert "name must be a non-empty string" in markdown
+    assert "input must be an object" in markdown
+    assert "expected_outputs entries must be non-empty strings" in markdown
+    assert "allowed_side_effects must be a non-empty list" in markdown
+    assert "verification must be a non-empty string" in markdown
+    assert "approval boundary not analyzed" in markdown
+
+
+def test_external_push_with_false_approval_fails_cli(tmp_path, capsys):
+    fixtures = tmp_path / "false-approval.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "external push",
+                        "input": {},
+                        "expected_outputs": ["branch"],
+                        "allowed_side_effects": ["push branch to external repo"],
+                        "approval_required": False,
+                        "verification": "git status --short",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["check", "--skill", "SKILL.md", "--fixtures", str(fixtures)])
+    output = capsys.readouterr().out
+
+    assert exit_code == 1
+    assert "approval_required must be 'required' when present" in output
+    assert "external side effect needs approval_required" in output
+
+
+def test_valid_fixture_shapes_pass(tmp_path):
+    fixtures = tmp_path / "valid.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "local check",
+                        "input": {},
+                        "expected_outputs": ["report"],
+                        "allowed_side_effects": ["none"],
+                        "verification": "python3 -m pytest",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert report.passed, report.to_markdown()
 
 
 def test_keywords_in_prose_and_code_fences_do_not_count_as_sections(tmp_path):
