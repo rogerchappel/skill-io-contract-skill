@@ -9,6 +9,10 @@ Each case should include:
 - `expected_outputs`: non-empty list of non-empty artifact or response-shape strings.
 - `allowed_side_effects`: non-empty list of non-empty permitted-effect strings; use `["none"]` when there are none.
 - `approval_required`: `required` when an allowed side effect can affect external systems.
+  The checker treats `push`, `publish`, `send`, `external`, and `connector` as
+  whole-word external indicators. An unqualified `write` also requires approval;
+  explicitly local forms such as `write local report`, `write local file`, `write
+  report file`, and `write report when --report is provided` do not.
 - `verification`: non-empty command a maintainer can run locally.
 
 The checker reports all field-shape errors for each case. Approval analysis runs only

@@ -17,6 +17,13 @@ REQUIRED_SECTIONS = {
     "validation": ("validation", "validation workflow", "verify", "smoke"),
 }
 
+EXTERNAL_ACTION_RE = re.compile(r"\b(?:push|publish|send|external|connector)\b", re.IGNORECASE)
+WRITE_ACTION_RE = re.compile(r"\bwrite\b", re.IGNORECASE)
+LOCAL_WRITE_RE = re.compile(
+    r"\bwrite\b.*(?:\blocal\s+(?:report|file)\b|\breport\s+file\b|--report\b)",
+    re.IGNORECASE,
+)
+
 
 @dataclass(frozen=True)
 class CheckResult:
@@ -172,8 +179,13 @@ def _check_external_approval(index: int, case: Any) -> CheckResult:
             False,
             "approval boundary not analyzed: allowed_side_effects must be a list of non-empty strings",
         )
-    effects = " ".join(item.lower() for item in allowed_side_effects)
-    external = any(token in effects for token in ("push", "publish", "send", "external", "connector", "write"))
+    external = any(_requires_approval(item) for item in allowed_side_effects)
     passed = not external or case.get("approval_required") == "required"
     detail = "approval boundary explicit" if passed else "external side effect needs approval_required"
     return CheckResult(f"fixture case {index} approval boundary", passed, detail)
+
+
+def _requires_approval(effect: str) -> bool:
+    if EXTERNAL_ACTION_RE.search(effect):
+        return True
+    return bool(WRITE_ACTION_RE.search(effect) and not LOCAL_WRITE_RE.search(effect))

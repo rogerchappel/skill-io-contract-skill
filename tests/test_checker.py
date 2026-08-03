@@ -1,6 +1,8 @@
 from pathlib import Path
 import json
 
+import pytest
+
 from skill_io_contract import check_skill
 from skill_io_contract.cli import main
 
@@ -96,6 +98,101 @@ def test_valid_fixture_shapes_pass(tmp_path):
                         "expected_outputs": ["report"],
                         "allowed_side_effects": ["none"],
                         "verification": "python3 -m pytest",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert report.passed, report.to_markdown()
+
+
+@pytest.mark.parametrize(
+    "side_effect",
+    [
+        "write local report",
+        "write local file",
+        "write report file",
+        "write report when --report is provided",
+    ],
+)
+def test_explicit_local_writes_do_not_require_approval(tmp_path, side_effect):
+    fixtures = tmp_path / "local-write.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "local output",
+                        "input": {},
+                        "expected_outputs": ["report"],
+                        "allowed_side_effects": [side_effect],
+                        "verification": "test -f report.md",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert report.passed, report.to_markdown()
+
+
+@pytest.mark.parametrize(
+    "side_effect",
+    [
+        "write",
+        "write configuration",
+        "push branch",
+        "publish package",
+        "send message",
+        "call external API",
+        "invoke connector action",
+    ],
+)
+def test_unqualified_writes_and_external_actions_require_approval(tmp_path, side_effect):
+    fixtures = tmp_path / "approval-required.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "effect requiring approval",
+                        "input": {},
+                        "expected_outputs": ["result"],
+                        "allowed_side_effects": [side_effect],
+                        "verification": "true",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert not report.passed
+    assert "external side effect needs approval_required" in report.to_markdown()
+
+
+@pytest.mark.parametrize("side_effect", ["sendable report", "publisher metadata", "pushbutton input", "externality score"])
+def test_external_action_keywords_require_word_boundaries(tmp_path, side_effect):
+    fixtures = tmp_path / "boundary.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "keyword substring",
+                        "input": {},
+                        "expected_outputs": ["result"],
+                        "allowed_side_effects": [side_effect],
+                        "verification": "true",
                     }
                 ]
             }
