@@ -285,3 +285,50 @@ example
     report = check_skill(skill, VALID_FIXTURES)
 
     assert report.passed, report.to_markdown()
+
+
+@pytest.mark.parametrize(
+    ("opening", "closing"),
+    [
+        ("```markdown", "~~~"),
+        ("~~~~markdown", "~~~"),
+        ("```markdown", ""),
+    ],
+)
+def test_mismatched_or_unmatched_fences_hide_headings_and_do_not_count_as_examples(
+    tmp_path, opening, closing
+):
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(f"# Skill\n\n{opening}\n## Inputs\n{closing}\n", encoding="utf-8")
+
+    report = check_skill(skill, VALID_FIXTURES)
+
+    inputs = next(check for check in report.checks if check.name == "skill section: inputs")
+    examples = next(check for check in report.checks if check.name == "examples are fenced")
+    assert not inputs.passed
+    assert not examples.passed
+    assert examples.detail == "found 0 fenced blocks"
+
+
+@pytest.mark.parametrize(
+    ("opening", "closing"),
+    [
+        ("```text", "```"),
+        ("~~~text", "~~~"),
+        ("```text", "````"),
+        ("~~~text", "~~~~"),
+    ],
+)
+def test_matching_fences_count_as_examples_and_reveal_following_headings(
+    tmp_path, opening, closing
+):
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(f"# Skill\n\n{opening}\n## Hidden\n{closing}\n## Inputs\n", encoding="utf-8")
+
+    report = check_skill(skill, VALID_FIXTURES)
+
+    inputs = next(check for check in report.checks if check.name == "skill section: inputs")
+    examples = next(check for check in report.checks if check.name == "examples are fenced")
+    assert inputs.passed
+    assert examples.passed
+    assert examples.detail == "found 1 fenced blocks"
