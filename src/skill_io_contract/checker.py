@@ -79,28 +79,44 @@ def check_skill(skill_path: Path, fixture_path: Path | None = None) -> SkillRepo
 
 
 def _check_skill_text(text: str) -> list[CheckResult]:
-    headings = _markdown_headings(text)
+    headings, fenced_blocks = _markdown_structure(text)
     checks: list[CheckResult] = []
     for name, needles in REQUIRED_SECTIONS.items():
         found = any(needle in headings for needle in needles)
         checks.append(CheckResult(f"skill section: {name}", found, "found heading" if found else "missing heading"))
-    fenced_blocks = len(re.findall(r"```", text))
-    checks.append(CheckResult("examples are fenced", fenced_blocks >= 2, f"found {fenced_blocks} fence markers"))
+    checks.append(CheckResult("examples are fenced", bool(fenced_blocks), f"found {fenced_blocks} fenced blocks"))
     return checks
 
 
 def _markdown_headings(text: str) -> set[str]:
+    headings, _ = _markdown_structure(text)
+    return headings
+
+
+def _markdown_structure(text: str) -> tuple[set[str], int]:
     headings: set[str] = set()
-    lines = text.splitlines()
-    in_fence = False
+    fenced_blocks = 0
+    fence_marker: str | None = None
+    fence_length = 0
     previous: str | None = None
 
-    for line in lines:
-        if re.match(r"^\s*(`{3,}|~{3,})", line):
-            in_fence = not in_fence
+    for line in text.splitlines():
+        fence = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
+        if fence_marker is not None:
+            marker, trailing = fence.groups() if fence else ("", "")
+            if marker.startswith(fence_marker) and len(marker) >= fence_length and not trailing.strip():
+                fence_marker = None
+                fence_length = 0
+                fenced_blocks += 1
             previous = None
             continue
-        if in_fence:
+
+        if fence:
+            marker, info = fence.groups()
+            if marker[0] == "~" or "`" not in info:
+                fence_marker = marker[0]
+                fence_length = len(marker)
+            previous = None
             continue
 
         atx = re.match(r"^\s{0,3}#{1,6}\s+(.+?)(?:\s+#+)?\s*$", line)
@@ -116,7 +132,7 @@ def _markdown_headings(text: str) -> set[str]:
 
         previous = line if line.strip() else None
 
-    return headings
+    return headings, fenced_blocks
 
 
 def _check_fixtures(fixture_path: Path) -> list[CheckResult]:
