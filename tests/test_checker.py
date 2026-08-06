@@ -149,10 +149,18 @@ def test_explicit_local_writes_do_not_require_approval(tmp_path, side_effect):
         "write",
         "write configuration",
         "push branch",
+        "pushing branch",
+        "pushed branch",
         "publish package",
+        "publishing package",
+        "published package",
         "send message",
+        "sending message",
+        "sent message",
         "call external API",
+        "communicate externally",
         "invoke connector action",
+        "invoke connectors",
     ],
 )
 def test_unqualified_writes_and_external_actions_require_approval(tmp_path, side_effect):
@@ -180,7 +188,17 @@ def test_unqualified_writes_and_external_actions_require_approval(tmp_path, side
     assert "external side effect needs approval_required" in report.to_markdown()
 
 
-@pytest.mark.parametrize("side_effect", ["sendable report", "publisher metadata", "pushbutton input", "externality score"])
+@pytest.mark.parametrize(
+    "side_effect",
+    [
+        "sendable report",
+        "sender metadata",
+        "publisher metadata",
+        "pushbutton input",
+        "externality score",
+        "connectorized workflow",
+    ],
+)
 def test_external_action_keywords_require_word_boundaries(tmp_path, side_effect):
     fixtures = tmp_path / "boundary.json"
     fixtures.write_text(
@@ -192,6 +210,49 @@ def test_external_action_keywords_require_word_boundaries(tmp_path, side_effect)
                         "input": {},
                         "expected_outputs": ["result"],
                         "allowed_side_effects": [side_effect],
+                        "verification": "true",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert report.passed, report.to_markdown()
+
+
+@pytest.mark.parametrize(
+    "side_effect",
+    [
+        "push branch",
+        "pushing branch",
+        "pushed branch",
+        "publish package",
+        "publishing package",
+        "published package",
+        "send message",
+        "sending message",
+        "sent message",
+        "call external API",
+        "communicate externally",
+        "invoke connector action",
+        "invoke connectors",
+    ],
+)
+def test_external_action_forms_pass_with_required_approval(tmp_path, side_effect):
+    fixtures = tmp_path / "approval-present.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "approved external effect",
+                        "input": {},
+                        "expected_outputs": ["result"],
+                        "allowed_side_effects": [side_effect],
+                        "approval_required": "required",
                         "verification": "true",
                     }
                 ]

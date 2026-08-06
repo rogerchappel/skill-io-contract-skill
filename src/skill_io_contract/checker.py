@@ -17,7 +17,10 @@ REQUIRED_SECTIONS = {
     "validation": ("validation", "validation workflow", "verify", "smoke"),
 }
 
-EXTERNAL_ACTION_RE = re.compile(r"\b(?:push|publish|send|external|connector)\b", re.IGNORECASE)
+EXTERNAL_ACTION_RE = re.compile(
+    r"\b(?:push(?:es|ed|ing)?|publish(?:es|ed|ing)?|send(?:s|ing)?|sent|externals?|externally|connectors?)\b",
+    re.IGNORECASE,
+)
 WRITE_ACTION_RE = re.compile(r"\bwrite\b", re.IGNORECASE)
 LOCAL_WRITE_RE = re.compile(
     r"\bwrite\b.*(?:\blocal\s+(?:report|file)\b|\breport\s+file\b|--report\b)",
