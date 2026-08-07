@@ -86,6 +86,55 @@ def test_external_push_with_false_approval_fails_cli(tmp_path, capsys):
     assert "external side effect needs approval_required" in output
 
 
+@pytest.mark.parametrize(
+    ("missing_option", "expected_path"),
+    [
+        ("skill", "missing-skill.md"),
+        ("fixtures", "missing-fixtures.json"),
+    ],
+)
+def test_cli_reports_missing_input_without_traceback(tmp_path, capsys, missing_option, expected_path):
+    skill = tmp_path / "skill.md"
+    skill.write_text(Path("SKILL.md").read_text(encoding="utf-8"), encoding="utf-8")
+    fixtures = tmp_path / "fixtures.json"
+    fixtures.write_text(VALID_FIXTURES.read_text(encoding="utf-8"), encoding="utf-8")
+    missing = tmp_path / expected_path
+
+    if missing_option == "skill":
+        skill = missing
+    else:
+        fixtures = missing
+
+    exit_code = main(["check", "--skill", str(skill), "--fixtures", str(fixtures)])
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert captured.out == ""
+    assert captured.err == f"skill-io-contract: error: cannot read --{missing_option} '{missing}': file not found\n"
+    assert "Traceback" not in captured.err
+
+
+@pytest.mark.parametrize("unreadable_option", ["skill", "fixtures"])
+def test_cli_reports_unreadable_input_without_traceback(tmp_path, capsys, unreadable_option):
+    skill = Path("SKILL.md")
+    fixtures = VALID_FIXTURES
+    unreadable = tmp_path / f"{unreadable_option}-directory"
+    unreadable.mkdir()
+
+    if unreadable_option == "skill":
+        skill = unreadable
+    else:
+        fixtures = unreadable
+
+    exit_code = main(["check", "--skill", str(skill), "--fixtures", str(fixtures)])
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert captured.out == ""
+    assert captured.err == f"skill-io-contract: error: cannot read --{unreadable_option} '{unreadable}': is a directory\n"
+    assert "Traceback" not in captured.err
+
+
 def test_valid_fixture_shapes_pass(tmp_path):
     fixtures = tmp_path / "valid.json"
     fixtures.write_text(
