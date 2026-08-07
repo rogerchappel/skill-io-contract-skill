@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 
 from .checker import check_skill
 
@@ -19,7 +20,15 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "check":
-        report = check_skill(args.skill, args.fixtures)
+        try:
+            report = check_skill(args.skill, args.fixtures)
+        except OSError as exc:
+            option, path = _failed_input(exc, args.skill, args.fixtures)
+            print(
+                f"skill-io-contract: error: cannot read --{option} '{path}': {_io_error_detail(exc)}",
+                file=sys.stderr,
+            )
+            return 2
         output = report.to_markdown()
         if args.report:
             args.report.parent.mkdir(parents=True, exist_ok=True)
@@ -29,3 +38,19 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if report.passed else 1
     return 2
 
+
+def _failed_input(exc: OSError, skill_path: Path, fixture_path: Path | None) -> tuple[str, Path]:
+    failed_path = Path(exc.filename) if exc.filename else skill_path
+    if fixture_path is not None and failed_path == fixture_path:
+        return "fixtures", fixture_path
+    return "skill", skill_path
+
+
+def _io_error_detail(exc: OSError) -> str:
+    if isinstance(exc, FileNotFoundError):
+        return "file not found"
+    if isinstance(exc, PermissionError):
+        return "permission denied"
+    if isinstance(exc, IsADirectoryError):
+        return "is a directory"
+    return "input is not readable"
