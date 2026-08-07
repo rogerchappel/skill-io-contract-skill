@@ -30,6 +30,17 @@ npm run smoke
 
 The CLI never writes to the skill or fixture files. It writes only the requested report path. It does not call external services, read credentials, or execute fixture commands.
 
+## Exit Status and Input Errors
+
+The `check` command exits with status `0` when every contract check passes, `1`
+when the generated report contains a failed check, and `2` when a CLI input
+cannot be read. Input errors are written to stderr without a Python traceback,
+for example:
+
+```text
+skill-io-contract: error: cannot read --skill 'missing.md': file not found
+```
+
 ## Limitations
 
 The checker is intentionally conservative. It verifies documentation structure and fixture metadata, not the semantic correctness of the skill itself.
