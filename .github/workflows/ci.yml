@@ -16,4 +16,13 @@ jobs:
       - run: npm test
       - run: npm run check
       - run: npm run smoke
+      - name: Validate report output error contract
+        run: |
+          set +e
+          python -m skill_io_contract check --skill SKILL.md --fixtures fixtures/cases.json --report /tmp 2>report-error.txt
+          status=$?
+          set -e
+          test "$status" -eq 2
+          grep -F "cannot write --report '/tmp': is a directory" report-error.txt
+          ! grep -F "Traceback" report-error.txt
       - run: python -m build
