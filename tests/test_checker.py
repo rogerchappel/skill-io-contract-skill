@@ -135,6 +135,58 @@ def test_cli_reports_unreadable_input_without_traceback(tmp_path, capsys, unread
     assert "Traceback" not in captured.err
 
 
+def test_cli_reports_directory_used_as_report_without_traceback(tmp_path, capsys):
+    report_path = tmp_path / "report-directory"
+    report_path.mkdir()
+
+    exit_code = main(
+        ["check", "--skill", "SKILL.md", "--fixtures", str(VALID_FIXTURES), "--report", str(report_path)]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert captured.out == ""
+    assert captured.err == f"skill-io-contract: error: cannot write --report '{report_path}': is a directory\n"
+    assert "Traceback" not in captured.err
+
+
+def test_cli_reports_report_parent_creation_failure_without_traceback(tmp_path, capsys, monkeypatch):
+    report_path = tmp_path / "missing-parent" / "report.md"
+    original_mkdir = Path.mkdir
+
+    def fail_for_report_parent(path, *args, **kwargs):
+        if path == report_path.parent:
+            raise PermissionError(13, "Permission denied", path)
+        return original_mkdir(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "mkdir", fail_for_report_parent)
+
+    exit_code = main(
+        ["check", "--skill", "SKILL.md", "--fixtures", str(VALID_FIXTURES), "--report", str(report_path)]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert captured.out == ""
+    assert captured.err == f"skill-io-contract: error: cannot write --report '{report_path}': permission denied\n"
+    assert "Traceback" not in captured.err
+
+
+def test_cli_stdout_and_file_reports_are_identical(tmp_path, capsys):
+    args = ["check", "--skill", "SKILL.md", "--fixtures", str(VALID_FIXTURES)]
+
+    assert main(args) == 0
+    stdout_report = capsys.readouterr().out
+
+    report_path = tmp_path / "reports" / "contract.md"
+    assert main([*args, "--report", str(report_path)]) == 0
+    captured = capsys.readouterr()
+
+    assert captured.out == ""
+    assert captured.err == ""
+    assert report_path.read_text(encoding="utf-8") == stdout_report
+
+
 def test_valid_fixture_shapes_pass(tmp_path):
     fixtures = tmp_path / "valid.json"
     fixtures.write_text(

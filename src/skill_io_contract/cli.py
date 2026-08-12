@@ -31,10 +31,18 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         output = report.to_markdown()
         if args.report:
-            args.report.parent.mkdir(parents=True, exist_ok=True)
-            args.report.write_text(output, encoding="utf-8")
+            try:
+                args.report.parent.mkdir(parents=True, exist_ok=True)
+                args.report.write_text(output, encoding="utf-8")
+            except OSError as exc:
+                print(
+                    f"skill-io-contract: error: cannot write --report '{args.report}': "
+                    f"{_io_error_detail(exc, fallback='output is not writable')}",
+                    file=sys.stderr,
+                )
+                return 2
         else:
-            print(output)
+            print(output, end="")
         return 0 if report.passed else 1
     return 2
 
@@ -46,11 +54,11 @@ def _failed_input(exc: OSError, skill_path: Path, fixture_path: Path | None) -> 
     return "skill", skill_path
 
 
-def _io_error_detail(exc: OSError) -> str:
+def _io_error_detail(exc: OSError, fallback: str = "input is not readable") -> str:
     if isinstance(exc, FileNotFoundError):
         return "file not found"
     if isinstance(exc, PermissionError):
         return "permission denied"
     if isinstance(exc, IsADirectoryError):
         return "is a directory"
-    return "input is not readable"
+    return fallback
