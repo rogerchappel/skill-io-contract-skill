@@ -28,6 +28,12 @@ LOCAL_WRITE_RE = re.compile(
 )
 
 
+class InputDecodeError(UnicodeError):
+    def __init__(self, path: Path) -> None:
+        super().__init__(f"input is not valid UTF-8: {path}")
+        self.path = path
+
+
 @dataclass(frozen=True)
 class CheckResult:
     name: str
@@ -71,7 +77,10 @@ class SkillReport:
 
 
 def check_skill(skill_path: Path, fixture_path: Path | None = None) -> SkillReport:
-    text = skill_path.read_text(encoding="utf-8")
+    try:
+        text = skill_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise InputDecodeError(skill_path) from exc
     checks: list[CheckResult] = []
     checks.extend(_check_skill_text(text))
     if fixture_path:
@@ -141,6 +150,8 @@ def _markdown_structure(text: str) -> tuple[set[str], int]:
 def _check_fixtures(fixture_path: Path) -> list[CheckResult]:
     try:
         payload = json.loads(fixture_path.read_text(encoding="utf-8"))
+    except UnicodeDecodeError as exc:
+        raise InputDecodeError(fixture_path) from exc
     except json.JSONDecodeError as exc:
         return [CheckResult("fixture JSON parses", False, str(exc))]
 

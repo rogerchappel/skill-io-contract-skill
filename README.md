@@ -34,12 +34,14 @@ The CLI never writes to the skill or fixture files. It writes only the requested
 
 The `check` command exits with status `0` when every contract check passes, `1`
 when the generated report contains a failed check, and `2` when a CLI input
-cannot be read or the requested `--report` path cannot be created or written.
-I/O errors are written to stderr without a Python traceback and identify the
+cannot be read, including because it is not valid UTF-8, or the requested
+`--report` path cannot be created or written. Input and output errors are
+written to stderr without a Python traceback and identify the
 affected option and path, for example:
 
 ```text
 skill-io-contract: error: cannot read --skill 'missing.md': file not found
+skill-io-contract: error: cannot read --fixtures 'cases.json': invalid UTF-8
 skill-io-contract: error: cannot write --report 'reports': is a directory
 ```
 
