@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 import sys
 
-from .checker import check_skill
+from .checker import InputDecodeError, check_skill
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,7 +22,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "check":
         try:
             report = check_skill(args.skill, args.fixtures)
-        except OSError as exc:
+        except (OSError, InputDecodeError) as exc:
             option, path = _failed_input(exc, args.skill, args.fixtures)
             print(
                 f"skill-io-contract: error: cannot read --{option} '{path}': {_io_error_detail(exc)}",
@@ -47,14 +47,23 @@ def main(argv: list[str] | None = None) -> int:
     return 2
 
 
-def _failed_input(exc: OSError, skill_path: Path, fixture_path: Path | None) -> tuple[str, Path]:
-    failed_path = Path(exc.filename) if exc.filename else skill_path
+def _failed_input(
+    exc: OSError | InputDecodeError, skill_path: Path, fixture_path: Path | None
+) -> tuple[str, Path]:
+    if isinstance(exc, InputDecodeError):
+        failed_path = exc.path
+    else:
+        failed_path = Path(exc.filename) if exc.filename else skill_path
     if fixture_path is not None and failed_path == fixture_path:
         return "fixtures", fixture_path
     return "skill", skill_path
 
 
-def _io_error_detail(exc: OSError, fallback: str = "input is not readable") -> str:
+def _io_error_detail(
+    exc: OSError | InputDecodeError, fallback: str = "input is not readable"
+) -> str:
+    if isinstance(exc, InputDecodeError):
+        return "invalid UTF-8"
     if isinstance(exc, FileNotFoundError):
         return "file not found"
     if isinstance(exc, PermissionError):

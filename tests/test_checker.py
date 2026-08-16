@@ -135,6 +135,31 @@ def test_cli_reports_unreadable_input_without_traceback(tmp_path, capsys, unread
     assert "Traceback" not in captured.err
 
 
+@pytest.mark.parametrize("invalid_option", ["skill", "fixtures"])
+def test_cli_reports_invalid_utf8_input_without_traceback(tmp_path, capsys, invalid_option):
+    skill = tmp_path / "skill.md"
+    skill.write_text(Path("SKILL.md").read_text(encoding="utf-8"), encoding="utf-8")
+    fixtures = tmp_path / "fixtures.json"
+    fixtures.write_text(VALID_FIXTURES.read_text(encoding="utf-8"), encoding="utf-8")
+    invalid = tmp_path / f"invalid-{invalid_option}"
+    invalid.write_bytes(b"\xff")
+
+    if invalid_option == "skill":
+        skill = invalid
+    else:
+        fixtures = invalid
+
+    exit_code = main(["check", "--skill", str(skill), "--fixtures", str(fixtures)])
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert captured.out == ""
+    assert captured.err == (
+        f"skill-io-contract: error: cannot read --{invalid_option} '{invalid}': invalid UTF-8\n"
+    )
+    assert "Traceback" not in captured.err
+
+
 def test_cli_reports_directory_used_as_report_without_traceback(tmp_path, capsys):
     report_path = tmp_path / "report-directory"
     report_path.mkdir()
