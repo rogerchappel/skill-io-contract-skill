@@ -26,6 +26,16 @@ LOCAL_WRITE_RE = re.compile(
     r"\bwrite\b.*(?:\blocal\s+(?:report|file)\b|\breport\s+file\b|--report\b)",
     re.IGNORECASE,
 )
+MUTATING_ACTION_RE = re.compile(
+    r"\b(?:creat(?:e|es|ed|ing)|delet(?:e|es|ed|ing)|edit(?:s|ed|ing)?|"
+    r"modif(?:y|ies|ied|ying)|remov(?:e|es|ed|ing)|updat(?:e|es|ed|ing))\b",
+    re.IGNORECASE,
+)
+EXTERNAL_RESOURCE_RE = re.compile(
+    r"\b(?:github|gitlab|bitbucket|external\s+account|repository\s+(?:issue|release)|"
+    r"pull\s+request|release\s+artifact)\b",
+    re.IGNORECASE,
+)
 
 
 class InputDecodeError(UnicodeError):
@@ -217,5 +227,7 @@ def _check_external_approval(index: int, case: Any) -> CheckResult:
 
 def _requires_approval(effect: str) -> bool:
     if EXTERNAL_ACTION_RE.search(effect):
+        return True
+    if MUTATING_ACTION_RE.search(effect) and EXTERNAL_RESOURCE_RE.search(effect):
         return True
     return bool(WRITE_ACTION_RE.search(effect) and not LOCAL_WRITE_RE.search(effect))

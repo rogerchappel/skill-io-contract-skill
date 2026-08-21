@@ -317,6 +317,75 @@ def test_unqualified_writes_and_external_actions_require_approval(tmp_path, side
 @pytest.mark.parametrize(
     "side_effect",
     [
+        "delete a GitHub release artifact",
+        "remove a GitHub release",
+        "create a repository issue",
+        "update a pull request",
+        "edit an external account",
+    ],
+)
+def test_external_resource_mutations_require_approval(tmp_path, side_effect):
+    fixtures = tmp_path / "external-mutation.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "external mutation",
+                        "input": {},
+                        "expected_outputs": ["result"],
+                        "allowed_side_effects": [side_effect],
+                        "verification": "true",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert not report.passed
+    assert "external side effect needs approval_required" in report.to_markdown()
+
+
+@pytest.mark.parametrize(
+    "side_effect",
+    [
+        "delete a local report file",
+        "remove a local cache file",
+        "read a GitHub release artifact",
+        "list repository issues",
+        "inspect a pull request",
+    ],
+)
+def test_local_mutations_and_external_reads_do_not_require_approval(tmp_path, side_effect):
+    fixtures = tmp_path / "safe-actions.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "safe action",
+                        "input": {},
+                        "expected_outputs": ["result"],
+                        "allowed_side_effects": [side_effect],
+                        "verification": "true",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert report.passed, report.to_markdown()
+
+
+@pytest.mark.parametrize(
+    "side_effect",
+    [
         "sendable report",
         "sender metadata",
         "publisher metadata",
