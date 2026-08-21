@@ -21,7 +21,7 @@ This skill is read-only for source artifacts. It may write a report file only wh
 
 ## Approval Requirements
 
-External account writes, package publishing, repository pushes, or live connector actions are outside this skill. Ask for explicit approval before taking those actions in a separate workflow.
+Unqualified writes; package publishing, repository pushes, messages, and live connector actions; and create, update, edit, delete, or remove actions on clearly external resources (including GitHub releases or artifacts, repository issues, pull requests, and external accounts) require explicit approval in fixture contracts. Explicitly local report/file writes and read-only external actions do not require approval metadata. This checker only reports those boundaries; taking an external action is outside the skill.
 
 ## Examples
 
