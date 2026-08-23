@@ -22,10 +22,11 @@ EXTERNAL_ACTION_RE = re.compile(
     re.IGNORECASE,
 )
 WRITE_ACTION_RE = re.compile(r"\bwrite\b", re.IGNORECASE)
-LOCAL_WRITE_RE = re.compile(
-    r"\bwrite\b.*(?:\blocal\s+(?:report|file)\b|\breport\s+file\b|--report\b)",
+LOCAL_WRITE_CLAUSE_RE = re.compile(
+    r"\bwrite\b[^,;]*?(?:\blocal\s+(?:report|file)\b|\breport\s+file\b|--report\b)",
     re.IGNORECASE,
 )
+CLAUSE_SEPARATOR_RE = re.compile(r"\s*(?:,|;|\band\b|\bthen\b)\s*", re.IGNORECASE)
 MUTATING_ACTION_RE = re.compile(
     r"\b(?:creat(?:e|es|ed|ing)|delet(?:e|es|ed|ing)|edit(?:s|ed|ing)?|"
     r"modif(?:y|ies|ied|ying)|remov(?:e|es|ed|ing)|updat(?:e|es|ed|ing))\b",
@@ -230,4 +231,9 @@ def _requires_approval(effect: str) -> bool:
         return True
     if MUTATING_ACTION_RE.search(effect) and EXTERNAL_RESOURCE_RE.search(effect):
         return True
-    return bool(WRITE_ACTION_RE.search(effect) and not LOCAL_WRITE_RE.search(effect))
+    if not WRITE_ACTION_RE.search(effect):
+        return False
+    if EXTERNAL_RESOURCE_RE.search(effect):
+        return True
+    clauses = (clause for clause in CLAUSE_SEPARATOR_RE.split(effect) if clause)
+    return any(WRITE_ACTION_RE.search(clause) and not LOCAL_WRITE_CLAUSE_RE.search(clause) for clause in clauses)
