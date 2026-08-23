@@ -272,6 +272,39 @@ def test_explicit_local_writes_do_not_require_approval(tmp_path, side_effect):
 @pytest.mark.parametrize(
     "side_effect",
     [
+        "write a GitHub issue and a local report",
+        "write a local report, then write a summary",
+        "write local file; write release notes",
+    ],
+)
+def test_mixed_scope_writes_require_approval(tmp_path, capsys, side_effect):
+    fixtures = tmp_path / "mixed-write.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "mixed output",
+                        "input": {},
+                        "expected_outputs": ["report"],
+                        "allowed_side_effects": [side_effect],
+                        "verification": "test -f report.md",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = main(["check", "--skill", "SKILL.md", "--fixtures", str(fixtures)])
+
+    assert exit_code == 1
+    assert "external side effect needs approval_required" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "side_effect",
+    [
         "write",
         "write configuration",
         "push branch",
