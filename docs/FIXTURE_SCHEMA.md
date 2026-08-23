@@ -15,7 +15,9 @@ Each case should include:
   and their plural forms are also external indicators. Unrelated substrings such as
   `publisher` and `pushbutton` are not indicators. An unqualified `write` also requires approval;
   explicitly local forms such as `write local report`, `write local file`, `write
-  report file`, and `write report when --report is provided` do not.
+  report file`, and `write report when --report is provided` do not. This exemption
+  is clause-scoped: combining a local write with a GitHub/external write or another
+  unqualified write still requires `approval_required`.
 - `verification`: non-empty command a maintainer can run locally.
 
 The checker reports all field-shape errors for each case. Approval analysis runs only
