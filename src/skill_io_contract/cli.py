@@ -11,7 +11,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="skill-io-contract")
     sub = parser.add_subparsers(dest="command", required=True)
     check = sub.add_parser("check", help="check a SKILL.md IO contract")
-    check.add_argument("--skill", required=True, type=Path)
+    source = check.add_mutually_exclusive_group(required=True)
+    source.add_argument("--skill", type=Path)
+    source.add_argument(
+        "--bundled",
+        action="store_true",
+        help="check the contract and fixtures shipped with this installation",
+    )
     check.add_argument("--fixtures", type=Path)
     check.add_argument("--report", type=Path)
     return parser
@@ -20,31 +26,45 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "check":
+        if args.bundled:
+            resources = _bundled_resources()
+            return _run_check(resources / "SKILL.md", resources / "fixtures/cases.json", args.report)
+        return _run_check(args.skill, args.fixtures, args.report)
+    return 2
+
+
+def _bundled_resources() -> Path:
+    installed = Path(sys.prefix) / "share/skill-io-contract-skill"
+    if installed.is_dir():
+        return installed
+    return Path(__file__).resolve().parents[2]
+
+
+def _run_check(skill_path: Path, fixture_path: Path | None, report_path: Path | None) -> int:
+    try:
+        report = check_skill(skill_path, fixture_path)
+    except (OSError, InputDecodeError) as exc:
+        option, path = _failed_input(exc, skill_path, fixture_path)
+        print(
+            f"skill-io-contract: error: cannot read --{option} '{path}': {_io_error_detail(exc)}",
+            file=sys.stderr,
+        )
+        return 2
+    output = report.to_markdown()
+    if report_path:
         try:
-            report = check_skill(args.skill, args.fixtures)
-        except (OSError, InputDecodeError) as exc:
-            option, path = _failed_input(exc, args.skill, args.fixtures)
+            report_path.parent.mkdir(parents=True, exist_ok=True)
+            report_path.write_text(output, encoding="utf-8")
+        except OSError as exc:
             print(
-                f"skill-io-contract: error: cannot read --{option} '{path}': {_io_error_detail(exc)}",
+                f"skill-io-contract: error: cannot write --report '{report_path}': "
+                f"{_io_error_detail(exc, fallback='output is not writable')}",
                 file=sys.stderr,
             )
             return 2
-        output = report.to_markdown()
-        if args.report:
-            try:
-                args.report.parent.mkdir(parents=True, exist_ok=True)
-                args.report.write_text(output, encoding="utf-8")
-            except OSError as exc:
-                print(
-                    f"skill-io-contract: error: cannot write --report '{args.report}': "
-                    f"{_io_error_detail(exc, fallback='output is not writable')}",
-                    file=sys.stderr,
-                )
-                return 2
-        else:
-            print(output, end="")
-        return 0 if report.passed else 1
-    return 2
+    else:
+        print(output, end="")
+    return 0 if report.passed else 1
 
 
 def _failed_input(
