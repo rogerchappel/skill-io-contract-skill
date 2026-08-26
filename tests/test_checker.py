@@ -15,6 +15,11 @@ def test_bundled_skill_passes_contract():
     assert report.passed, report.to_markdown()
 
 
+def test_bundled_cli_uses_shipped_contract(capsys):
+    assert main(["check", "--bundled"]) == 0
+    assert "IO Contract Report" in capsys.readouterr().out
+
+
 def test_report_marks_missing_fixtures():
     report = check_skill(Path("SKILL.md"))
     assert not report.passed
