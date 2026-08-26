@@ -7,7 +7,16 @@ Validate that an agent skill has an explicit input/output contract before it is 
 ## Quickstart
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install skill-io-contract-skill
+skill-io-contract check --bundled --report report.md
+```
+
+`--bundled` checks the reusable contract at
+`share/skill-io-contract-skill/SKILL.md` and its fixture at
+`share/skill-io-contract-skill/fixtures/cases.json` under the installation prefix.
+For a source checkout or your own skill, pass explicit paths instead:
+
+```bash
 skill-io-contract check --skill SKILL.md --fixtures fixtures/cases.json --report report.md
 ```
 
