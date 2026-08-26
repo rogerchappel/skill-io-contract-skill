@@ -26,3 +26,5 @@ jobs:
           grep -F "cannot write --report '/tmp': is a directory" report-error.txt
           ! grep -F "Traceback" report-error.txt
       - run: python -m build
+      - name: Verify distribution contents and installed contract
+        run: python scripts/verify_distribution.py dist
