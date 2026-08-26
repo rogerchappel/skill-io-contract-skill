@@ -20,3 +20,7 @@ skill-io-contract = "skill_io_contract.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.data-files]
+"share/skill-io-contract-skill" = ["SKILL.md"]
+"share/skill-io-contract-skill/fixtures" = ["fixtures/cases.json"]
