@@ -422,6 +422,36 @@ def test_local_mutations_and_external_reads_do_not_require_approval(tmp_path, si
 
 
 @pytest.mark.parametrize(
+    ("side_effect", "requires_approval"),
+    [
+        ("create a local report and read a GitHub issue", False),
+        ("write a local report without calling external services", False),
+        ("writing an unqualified report", True),
+        ("writes an unqualified report", True),
+        ("wrote an unqualified report", True),
+        ("written an unqualified report", True),
+        ("writing a local report", False),
+    ],
+)
+def test_approval_analysis_is_clause_scoped_and_recognizes_write_forms(
+    tmp_path, side_effect, requires_approval
+):
+    fixtures = tmp_path / "clause-scoped.json"
+    case = {
+        "name": "clause-scoped effect",
+        "input": {},
+        "expected_outputs": ["result"],
+        "allowed_side_effects": [side_effect],
+        "verification": "true",
+    }
+    fixtures.write_text(json.dumps({"cases": [case]}), encoding="utf-8")
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert report.passed is not requires_approval, report.to_markdown()
+
+
+@pytest.mark.parametrize(
     "side_effect",
     [
         "sendable report",
