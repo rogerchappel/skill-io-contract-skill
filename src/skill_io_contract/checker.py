@@ -18,23 +18,29 @@ REQUIRED_SECTIONS = {
 }
 
 EXTERNAL_ACTION_RE = re.compile(
-    r"\b(?:push(?:es|ed|ing)?|publish(?:es|ed|ing)?|send(?:s|ing)?|sent|externals?|externally|connectors?)\b",
+    r"\b(?:push(?:es|ed|ing)?|publish(?:es|ed|ing)?|send(?:s|ing)?|sent)\b",
     re.IGNORECASE,
 )
-WRITE_ACTION_RE = re.compile(r"\bwrite\b", re.IGNORECASE)
+WRITE_ACTION_RE = re.compile(r"\b(?:write|writes|writing|wrote|written)\b", re.IGNORECASE)
 LOCAL_WRITE_CLAUSE_RE = re.compile(
-    r"\bwrite\b[^,;]*?(?:\blocal\s+(?:report|file)\b|\breport\s+file\b|--report\b)",
+    r"\b(?:write|writes|writing|wrote|written)\b[^,;]*?"
+    r"(?:\b(?:a\s+)?local\s+(?:report|file)\b|\breport\s+file\b|--report\b)",
     re.IGNORECASE,
 )
 CLAUSE_SEPARATOR_RE = re.compile(r"\s*(?:,|;|\band\b|\bthen\b)\s*", re.IGNORECASE)
 MUTATING_ACTION_RE = re.compile(
     r"\b(?:creat(?:e|es|ed|ing)|delet(?:e|es|ed|ing)|edit(?:s|ed|ing)?|"
-    r"modif(?:y|ies|ied|ying)|remov(?:e|es|ed|ing)|updat(?:e|es|ed|ing))\b",
+    r"modif(?:y|ies|ied|ying)|remov(?:e|es|ed|ing)|updat(?:e|es|ed|ing)|"
+    r"call(?:s|ed|ing)?|invok(?:e|es|ed|ing)|communicat(?:e|es|ed|ing))\b",
     re.IGNORECASE,
 )
 EXTERNAL_RESOURCE_RE = re.compile(
     r"\b(?:github|gitlab|bitbucket|external\s+account|repository\s+(?:issue|release)|"
-    r"pull\s+request|release\s+artifact)\b",
+    r"pull\s+request|release\s+artifact|external(?:ly|\s+(?:api|services?|systems?))?|connectors?)\b",
+    re.IGNORECASE,
+)
+NEGATED_EXTERNAL_TAIL_RE = re.compile(
+    r"\bwithout\s+(?:call(?:s|ed|ing)?|invok(?:e|es|ed|ing)|communicat(?:e|es|ed|ing))\b.*$",
     re.IGNORECASE,
 )
 
@@ -227,13 +233,14 @@ def _check_external_approval(index: int, case: Any) -> CheckResult:
 
 
 def _requires_approval(effect: str) -> bool:
-    if EXTERNAL_ACTION_RE.search(effect):
-        return True
-    if MUTATING_ACTION_RE.search(effect) and EXTERNAL_RESOURCE_RE.search(effect):
-        return True
-    if not WRITE_ACTION_RE.search(effect):
-        return False
-    if EXTERNAL_RESOURCE_RE.search(effect):
-        return True
     clauses = (clause for clause in CLAUSE_SEPARATOR_RE.split(effect) if clause)
-    return any(WRITE_ACTION_RE.search(clause) and not LOCAL_WRITE_CLAUSE_RE.search(clause) for clause in clauses)
+    for clause in clauses:
+        clause = NEGATED_EXTERNAL_TAIL_RE.sub("", clause)
+        if EXTERNAL_ACTION_RE.search(clause):
+            return True
+        if WRITE_ACTION_RE.search(clause):
+            if EXTERNAL_RESOURCE_RE.search(clause) or not LOCAL_WRITE_CLAUSE_RE.search(clause):
+                return True
+        if MUTATING_ACTION_RE.search(clause) and EXTERNAL_RESOURCE_RE.search(clause):
+            return True
+    return False
