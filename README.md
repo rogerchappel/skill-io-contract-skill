@@ -30,12 +30,16 @@ npm run smoke
 
 - Required `SKILL.md` headings for triggers, inputs, outputs, side effects, approvals, examples, and validation. Accepted heading names include the variants demonstrated in the bundled `SKILL.md`; keywords in prose or fenced code do not satisfy this check.
 - Fixture cases that name the input, expected output shape, allowed side effects, and verification command.
-- Missing approval boundaries when a fixture permits an unqualified write; an
+- Missing approval boundaries when a fixture permits an unqualified write
+  (`write`, `writes`, `writing`, `wrote`, or `written`); an
   external action such as pushing, publishing, sending, or using a connector;
   or a create, update, edit, delete, or remove action on a clearly external
   resource such as GitHub, a repository issue or release, a pull request, an
   external account, or a release artifact. Explicitly local report and file
   writes and read-only external actions do not require approval metadata.
+  Action and resource signals must occur in the same clause, so a local
+  mutation followed by a separate external read remains read-only externally;
+  descriptive or negated external-service wording is not treated as a mutation.
 - A concise release-readiness score that can be pasted into a PR.
 
 ## Safety Notes
