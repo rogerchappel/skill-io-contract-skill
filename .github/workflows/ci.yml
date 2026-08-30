@@ -16,6 +16,8 @@ jobs:
       - run: npm test
       - run: npm run check
       - run: npm run smoke
+      - name: Verify documented GitHub install
+        run: python scripts/verify_documented_install.py
       - name: Validate report output error contract
         run: |
           set +e
