@@ -7,9 +7,13 @@ Validate that an agent skill has an explicit input/output contract before it is 
 ## Quickstart
 
 ```bash
-python -m pip install skill-io-contract-skill
-skill-io-contract check --bundled --report report.md
+python -m pip install "skill-io-contract-skill @ git+https://github.com/rogerchappel/skill-io-contract-skill.git"
+skill-io-contract check --bundled
 ```
+
+The package is not yet published to PyPI. Once it is available there, the
+shorter `python -m pip install skill-io-contract-skill` command will be
+supported. Until then, use the GitHub command above.
 
 `--bundled` checks the reusable contract at
 `share/skill-io-contract-skill/SKILL.md` and its fixture at
@@ -20,9 +24,11 @@ For a source checkout or your own skill, pass explicit paths instead:
 skill-io-contract check --skill SKILL.md --fixtures fixtures/cases.json --report report.md
 ```
 
-Run the bundled smoke check:
+For development from a source checkout, install the development dependencies
+and run the repository smoke check:
 
 ```bash
+python -m pip install -e ".[dev]"
 npm run smoke
 ```
 
