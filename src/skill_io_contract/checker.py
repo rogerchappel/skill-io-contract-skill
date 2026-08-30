@@ -27,7 +27,7 @@ LOCAL_WRITE_CLAUSE_RE = re.compile(
     r"(?:\b(?:a\s+)?local\s+(?:report|file)\b|\breport\s+file\b|--report\b)",
     re.IGNORECASE,
 )
-CLAUSE_SEPARATOR_RE = re.compile(r"\s*(?:,|;|\band\b|\bthen\b)\s*", re.IGNORECASE)
+CLAUSE_SEPARATOR_RE = re.compile(r"\s*(?:,|;|\band\b|\bbut\b|\bthen\b)\s*", re.IGNORECASE)
 MUTATING_ACTION_RE = re.compile(
     r"\b(?:creat(?:e|es|ed|ing)|delet(?:e|es|ed|ing)|edit(?:s|ed|ing)?|"
     r"modif(?:y|ies|ied|ying)|remov(?:e|es|ed|ing)|updat(?:e|es|ed|ing)|"
@@ -39,8 +39,11 @@ EXTERNAL_RESOURCE_RE = re.compile(
     r"pull\s+request|release\s+artifact|external(?:ly|\s+(?:api|services?|systems?))?|connectors?)\b",
     re.IGNORECASE,
 )
-NEGATED_EXTERNAL_TAIL_RE = re.compile(
-    r"\bwithout\s+(?:call(?:s|ed|ing)?|invok(?:e|es|ed|ing)|communicat(?:e|es|ed|ing))\b.*$",
+NEGATION_PREFIX_RE = re.compile(
+    r"(?:\b(?:do|does|did|will|would|should|can|could|must|may|might|is|are|was|were|has|have|had)\s+not|"
+    r"\b(?:do|does|did|will|would|should|can|could|must|may|might|is|are|was|were|has|have|had)n['’]t|"
+    r"\bwon['’]t|"
+    r"\bnever|\bwithout)\s*$",
     re.IGNORECASE,
 )
 
@@ -235,12 +238,15 @@ def _check_external_approval(index: int, case: Any) -> CheckResult:
 def _requires_approval(effect: str) -> bool:
     clauses = (clause for clause in CLAUSE_SEPARATOR_RE.split(effect) if clause)
     for clause in clauses:
-        clause = NEGATED_EXTERNAL_TAIL_RE.sub("", clause)
-        if EXTERNAL_ACTION_RE.search(clause):
+        if _has_affirmative_action(EXTERNAL_ACTION_RE, clause):
             return True
-        if WRITE_ACTION_RE.search(clause):
-            if EXTERNAL_RESOURCE_RE.search(clause) or not LOCAL_WRITE_CLAUSE_RE.search(clause):
+        if _has_affirmative_action(WRITE_ACTION_RE, clause):
+            if not LOCAL_WRITE_CLAUSE_RE.search(clause):
                 return True
-        if MUTATING_ACTION_RE.search(clause) and EXTERNAL_RESOURCE_RE.search(clause):
+        if _has_affirmative_action(MUTATING_ACTION_RE, clause) and EXTERNAL_RESOURCE_RE.search(clause):
             return True
     return False
+
+
+def _has_affirmative_action(pattern: re.Pattern[str], clause: str) -> bool:
+    return any(not NEGATION_PREFIX_RE.search(clause[: match.start()]) for match in pattern.finditer(clause))
