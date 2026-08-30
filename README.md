@@ -39,7 +39,9 @@ npm run smoke
   writes and read-only external actions do not require approval metadata.
   Action and resource signals must occur in the same clause, so a local
   mutation followed by a separate external read remains read-only externally;
-  descriptive or negated external-service wording is not treated as a mutation.
+  actions using `not`, `never`, `without`, or common contractions are not treated
+  as mutations. Any affirmative external action in the same or a separate clause
+  still requires approval.
 - A concise release-readiness score that can be pasted into a PR.
 
 ## Safety Notes
