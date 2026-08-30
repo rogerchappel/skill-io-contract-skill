@@ -454,6 +454,80 @@ def test_approval_analysis_is_clause_scoped_and_recognizes_write_forms(
 @pytest.mark.parametrize(
     "side_effect",
     [
+        "does not push a branch",
+        "do not publish the package",
+        "did not send a message",
+        "will not push changes",
+        "never publishes artifacts",
+        "without sending a notification",
+        "doesn't push a branch",
+        "won't publish the package",
+        "does not delete a GitHub release",
+        "never updates a pull request",
+        "without creating a repository issue",
+    ],
+)
+def test_negated_external_actions_do_not_require_approval(tmp_path, side_effect):
+    fixtures = tmp_path / "negated-external-action.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "negated external action",
+                        "input": {},
+                        "expected_outputs": ["result"],
+                        "allowed_side_effects": [side_effect],
+                        "verification": "true",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert report.passed, report.to_markdown()
+
+
+@pytest.mark.parametrize(
+    "side_effect",
+    [
+        "does not publish the package, then sends a message",
+        "does not delete a GitHub release but updates a pull request",
+        "never pushes branches; create a repository issue",
+        "without sending notifications and publish the package",
+    ],
+)
+def test_affirmative_action_among_negated_actions_requires_approval(tmp_path, side_effect):
+    fixtures = tmp_path / "mixed-negation.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "mixed external actions",
+                        "input": {},
+                        "expected_outputs": ["result"],
+                        "allowed_side_effects": [side_effect],
+                        "verification": "true",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert not report.passed
+    assert "external side effect needs approval_required" in report.to_markdown()
+
+
+@pytest.mark.parametrize(
+    "side_effect",
+    [
         "sendable report",
         "sender metadata",
         "publisher metadata",
