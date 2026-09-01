@@ -14,8 +14,10 @@ Each case should include:
   `sent`) as whole-word external actions. External resources and connectors require
   an affirmative mutating action in the same clause. Negated actions using `not`,
   `never`, `without`, or common contractions (for example, `does not publish`,
-  `never updates a pull request`, and `won't send`) are not mutations. An affirmative
-  action in the same or a separate clause still requires approval. Unrelated substrings such
+  `never updates a pull request`, and `won't send`) are not mutations. A shared
+  negation also covers coordinated action wording such as `does not push or publish
+  a release` and its supported contractions. An affirmative action in the same or
+  a separate clause still requires approval. Unrelated substrings such
   as `publisher` and `pushbutton` are not indicators. Unqualified `write`, `writes`,
   `writing`, `wrote`, and `written` forms also require approval; explicitly local
   forms such as `write local report`, `writing a local file`, `write report file`,
