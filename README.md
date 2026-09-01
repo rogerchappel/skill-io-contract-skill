@@ -46,7 +46,8 @@ npm run smoke
   Action and resource signals must occur in the same clause, so a local
   mutation followed by a separate external read remains read-only externally;
   actions using `not`, `never`, `without`, or common contractions are not treated
-  as mutations. Any affirmative external action in the same or a separate clause
+  as mutations, including coordinated wording such as `does not push or publish
+  a release`. Any affirmative external action in the same or a separate clause
   still requires approval.
 - A concise release-readiness score that can be pasted into a PR.
 
