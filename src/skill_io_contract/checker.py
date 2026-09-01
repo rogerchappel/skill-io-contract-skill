@@ -249,4 +249,20 @@ def _requires_approval(effect: str) -> bool:
 
 
 def _has_affirmative_action(pattern: re.Pattern[str], clause: str) -> bool:
-    return any(not NEGATION_PREFIX_RE.search(clause[: match.start()]) for match in pattern.finditer(clause))
+    previous_match: re.Match[str] | None = None
+    previous_was_negated = False
+
+    for match in pattern.finditer(clause):
+        explicitly_negated = bool(NEGATION_PREFIX_RE.search(clause[: match.start()]))
+        coordinated_with_negated_action = (
+            previous_match is not None
+            and previous_was_negated
+            and bool(re.fullmatch(r"\s+or\s+", clause[previous_match.end() : match.start()], re.IGNORECASE))
+        )
+        negated = explicitly_negated or coordinated_with_negated_action
+        if not negated:
+            return True
+        previous_match = match
+        previous_was_negated = negated
+
+    return False
