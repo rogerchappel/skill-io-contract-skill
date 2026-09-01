@@ -494,10 +494,45 @@ def test_negated_external_actions_do_not_require_approval(tmp_path, side_effect)
 @pytest.mark.parametrize(
     "side_effect",
     [
+        "does not push or publish a release",
+        "doesn't push or publish a release",
+        "will not send or publish an artifact",
+        "won't send or publish an artifact",
+    ],
+)
+def test_coordinated_negated_external_actions_do_not_require_approval(tmp_path, side_effect):
+    fixtures = tmp_path / "coordinated-negation.json"
+    fixtures.write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "name": "coordinated negated external actions",
+                        "input": {},
+                        "expected_outputs": ["result"],
+                        "allowed_side_effects": [side_effect],
+                        "verification": "true",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+
+    assert report.passed, report.to_markdown()
+
+
+@pytest.mark.parametrize(
+    "side_effect",
+    [
         "does not publish the package, then sends a message",
         "does not delete a GitHub release but updates a pull request",
         "never pushes branches; create a repository issue",
         "without sending notifications and publish the package",
+        "does not push or will publish the package",
+        "does not push or does publish the package",
     ],
 )
 def test_affirmative_action_among_negated_actions_requires_approval(tmp_path, side_effect):
