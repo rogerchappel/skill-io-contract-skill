@@ -38,7 +38,8 @@ npm run smoke
 - Fixture cases that name the input, expected output shape, allowed side effects, and verification command.
 - Missing approval boundaries when a fixture permits an unqualified write
   (`write`, `writes`, `writing`, `wrote`, or `written`); an
-  external action such as pushing, publishing, sending, or using a connector;
+  external action such as pushing, publishing, sending, or connector wording such
+  as use, uses, or using;
   or a create, update, edit, delete, or remove action on a clearly external
   resource such as GitHub, a repository issue or release, a pull request, an
   external account, or a release artifact. Explicitly local report and file
