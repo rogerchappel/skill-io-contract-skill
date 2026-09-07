@@ -325,6 +325,9 @@ def test_mixed_scope_writes_require_approval(tmp_path, capsys, side_effect):
         "communicate externally",
         "invoke connector action",
         "invoke connectors",
+        "use a connector",
+        "uses a connector",
+        "using a connector",
     ],
 )
 def test_unqualified_writes_and_external_actions_require_approval(tmp_path, side_effect):
@@ -636,6 +639,28 @@ def test_external_action_forms_pass_with_required_approval(tmp_path, side_effect
     report = check_skill(Path("SKILL.md"), fixtures)
 
     assert report.passed, report.to_markdown()
+
+
+@pytest.mark.parametrize("connector_effect", ["use a connector", "uses a connector", "using a connector"])
+def test_connector_use_requires_exact_approval_marker(tmp_path, capsys, connector_effect):
+    case = {
+        "name": "connector use",
+        "input": {},
+        "expected_outputs": ["result"],
+        "allowed_side_effects": [connector_effect],
+        "verification": "true",
+    }
+    fixtures = tmp_path / "connector-use.json"
+    fixtures.write_text(json.dumps({"cases": [case]}), encoding="utf-8")
+
+    assert main(["check", "--skill", "SKILL.md", "--fixtures", str(fixtures)]) == 1
+    assert "external side effect needs approval_required" in capsys.readouterr().out
+
+    case["approval_required"] = "required"
+    fixtures.write_text(json.dumps({"cases": [case]}), encoding="utf-8")
+
+    assert main(["check", "--skill", "SKILL.md", "--fixtures", str(fixtures)]) == 0
+    assert "approval boundary explicit" in capsys.readouterr().out
 
 
 def test_keywords_in_prose_and_code_fences_do_not_count_as_sections(tmp_path):
