@@ -31,7 +31,8 @@ CLAUSE_SEPARATOR_RE = re.compile(r"\s*(?:,|;|\band\b|\bbut\b|\bthen\b)\s*", re.I
 MUTATING_ACTION_RE = re.compile(
     r"\b(?:creat(?:e|es|ed|ing)|delet(?:e|es|ed|ing)|edit(?:s|ed|ing)?|"
     r"modif(?:y|ies|ied|ying)|remov(?:e|es|ed|ing)|updat(?:e|es|ed|ing)|"
-    r"call(?:s|ed|ing)?|invok(?:e|es|ed|ing)|communicat(?:e|es|ed|ing))\b",
+    r"call(?:s|ed|ing)?|invok(?:e|es|ed|ing)|communicat(?:e|es|ed|ing)|"
+    r"us(?:e|es|ed|ing))\b",
     re.IGNORECASE,
 )
 EXTERNAL_RESOURCE_RE = re.compile(
