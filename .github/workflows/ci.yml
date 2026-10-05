@@ -21,9 +21,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e ".[dev]"
-      - run: npm test
-      - run: npm run check
-      - run: npm run smoke
+      - run: python -m pytest
+      - run: python -m compileall src tests
+      - run: python -m skill_io_contract check --skill SKILL.md --fixtures fixtures/cases.json --report /tmp/skill-io-contract-report.md
 
   release:
     name: Distribution and documented install
