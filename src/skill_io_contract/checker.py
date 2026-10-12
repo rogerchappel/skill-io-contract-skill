@@ -176,7 +176,13 @@ def _check_fixtures(fixture_path: Path) -> list[CheckResult]:
     except json.JSONDecodeError as exc:
         return [CheckResult("fixture JSON parses", False, str(exc))]
 
-    cases = payload.get("cases") if isinstance(payload, dict) else None
+    if not isinstance(payload, dict):
+        return [
+            CheckResult("fixture JSON parses", True, "valid JSON"),
+            CheckResult("fixture JSON root", False, "expected an object containing a cases list"),
+        ]
+
+    cases = payload.get("cases")
     checks = [CheckResult("fixture JSON parses", True, "valid JSON")]
     checks.append(CheckResult("fixtures contain cases", isinstance(cases, list) and bool(cases), "cases list present" if cases else "cases list missing"))
     if not isinstance(cases, list):
