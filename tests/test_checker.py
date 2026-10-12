@@ -790,3 +790,21 @@ def test_matching_fences_count_as_examples_and_reveal_following_headings(
     assert inputs.passed
     assert examples.passed
     assert examples.detail == "found 1 fenced blocks"
+
+
+@pytest.mark.parametrize("root", [[], None, 42, "cases"])
+def test_fixture_json_non_object_root_reports_expected_object(tmp_path, root):
+    fixtures = tmp_path / "non-object-root.json"
+    fixtures.write_text(json.dumps(root), encoding="utf-8")
+
+    report = check_skill(Path("SKILL.md"), fixtures)
+    fixture_checks = [check for check in report.checks if check.name.startswith("fixture")]
+
+    assert not report.passed
+    assert any(check.name == "fixture JSON parses" and check.passed for check in fixture_checks)
+    assert any(
+        check.name == "fixture JSON root"
+        and not check.passed
+        and check.detail == "expected an object containing a cases list"
+        for check in fixture_checks
+    )
