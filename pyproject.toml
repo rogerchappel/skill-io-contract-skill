@@ -18,6 +18,12 @@ dev = ["build>=1.2", "pytest>=8"]
 [project.scripts]
 skill-io-contract = "skill_io_contract.cli:main"
 
+[tool.skill-io-contract.release-check]
+commands = [
+  "bash scripts/validate.sh",
+  "python3 -m pip wheel --no-deps --no-build-isolation --wheel-dir dist .",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
