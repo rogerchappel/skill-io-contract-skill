@@ -24,11 +24,16 @@ For a source checkout or your own skill, pass explicit paths instead:
 skill-io-contract check --skill SKILL.md --fixtures fixtures/cases.json --report report.md
 ```
 
-For development from a source checkout, install the development dependencies
-and run the repository smoke check:
+For development from a source checkout, install Python 3.10 or newer and
+Node.js 20 or newer (which includes npm), then install the development
+dependencies and run the repository checks. These are the same prerequisites
+used by CI; `npm test` runs pytest, `npm run check` compiles the Python
+modules, and `npm run smoke` runs the CLI smoke check:
 
 ```bash
 python -m pip install -e ".[dev]"
+npm test
+npm run check
 npm run smoke
 ```
 
