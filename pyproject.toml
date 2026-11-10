@@ -20,6 +20,9 @@ authors = [{ name = "Roger Chappel" }]
 license = "MIT"
 dependencies = []
 
+[project.urls]
+Repository = "https://github.com/rogerchappel/skill-io-contract-skill"
+
 [project.optional-dependencies]
 dev = ["build>=1.2", "pytest>=8"]
 
